@@ -118,9 +118,9 @@ under the License.
                 <replace file="${project.build.outputDirectory}/archetype-resources/core/src/main/resources/domains/MasterContent.xml"
                          token="http://localhost:"
                          value="https://localhost:"/>
-                <replace file="${project.build.outputDirectory}/archetype-resources/core/src/test/resources/domains/MasterContent.xml"
+<!--                <replace file="${project.build.outputDirectory}/archetype-resources/core/src/test/resources/domains/MasterContent.xml"
                          token="http://localhost:"
-                         value="https://localhost:"/>
+                         value="https://localhost:"/>-->
               </target>
             </configuration>
           </execution>

@@ -142,7 +142,7 @@ under the License.
 
   <build>
     <plugins>
-      <plugin>
+<!--      <plugin>
         <groupId>org.codehaus.cargo</groupId>
         <artifactId>cargo-maven3-plugin</artifactId>
         <inherited>true</inherited>
@@ -249,7 +249,7 @@ under the License.
             </configuration>
           </execution>
         </executions>
-      </plugin>
+      </plugin>-->
       
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
