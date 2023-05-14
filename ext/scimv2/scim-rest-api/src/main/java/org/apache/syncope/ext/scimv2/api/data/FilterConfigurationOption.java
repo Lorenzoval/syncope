@@ -39,5 +39,4 @@ public class FilterConfigurationOption extends ConfigurationOption {
     public int getMaxResults() {
         return maxResults;
     }
-
 }

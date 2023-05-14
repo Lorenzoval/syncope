@@ -46,7 +46,6 @@ import org.apache.syncope.core.persistence.api.dao.ExternalResourceDAO;
 import org.apache.syncope.core.persistence.api.dao.RealmDAO;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
 import org.apache.syncope.core.persistence.api.entity.AnyUtilsFactory;
-import org.apache.syncope.core.persistence.api.entity.Realm;
 import org.apache.syncope.core.persistence.api.entity.policy.PasswordPolicy;
 import org.apache.syncope.core.persistence.api.entity.task.PullTask;
 import org.apache.syncope.core.persistence.api.entity.user.User;
@@ -175,8 +174,8 @@ public class ConnObjectUtils {
      * @param pullTask pull task
      * @param anyTypeKind any type kind
      * @param provision provision information
-     * @param generatePasswordIfPossible whether password value shall be generated, in case not found from
-     * connector object and allowed by resource configuration
+     * @param generatePassword whether password value shall be generated, in case not found from
+     * connector object
      * @param <C> create request type
      * @return create request
      */
@@ -186,31 +185,32 @@ public class ConnObjectUtils {
             final PullTask pullTask,
             final AnyTypeKind anyTypeKind,
             final Provision provision,
-            final boolean generatePasswordIfPossible) {
+            final boolean generatePassword) {
 
         AnyTO anyTO = getAnyTOFromConnObject(obj, pullTask, anyTypeKind, provision);
         C anyCR = anyUtilsFactory.getInstance(anyTypeKind).newAnyCR();
         EntityTOUtils.toAnyCR(anyTO, anyCR);
 
-        // (for users) if password was not set above, generate if resource is configured for that
+        // (for users) if password was not set above, generate if possible
         if (anyCR instanceof UserCR
                 && StringUtils.isBlank(((UserCR) anyCR).getPassword())
-                && generatePasswordIfPossible && pullTask.getResource().isRandomPwdIfNotProvided()) {
+                && generatePassword) {
 
             UserCR userCR = (UserCR) anyCR;
             List<PasswordPolicy> passwordPolicies = new ArrayList<>();
 
-            Realm realm = realmDAO.findByFullPath(userCR.getRealm());
-            if (realm != null) {
-                realmDAO.findAncestors(realm).stream().
-                        filter(ancestor -> ancestor.getPasswordPolicy() != null).
-                        forEach(ancestor -> passwordPolicies.add(ancestor.getPasswordPolicy()));
-            }
-
+            // add resource policies
             userCR.getResources().stream().
                     map(resourceDAO::find).
                     filter(r -> r != null && r.getPasswordPolicy() != null).
                     forEach(r -> passwordPolicies.add(r.getPasswordPolicy()));
+
+            // add realm policies
+            Optional.ofNullable(realmDAO.findByFullPath(userCR.getRealm())).
+                    ifPresent(realm -> realmDAO.findAncestors(realm).stream().
+                    filter(ancestor -> ancestor.getPasswordPolicy() != null
+                    && !passwordPolicies.contains(ancestor.getPasswordPolicy())).
+                    forEach(ancestor -> passwordPolicies.add(ancestor.getPasswordPolicy())));
 
             userCR.setPassword(passwordGenerator.generate(passwordPolicies));
         }

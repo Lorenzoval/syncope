@@ -16,21 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.syncope.client.enduser.rest;
+package org.apache.syncope.common.lib.scim;
 
-import java.util.List;
-import org.apache.syncope.common.lib.SyncopeConstants;
-import org.apache.syncope.common.lib.to.RealmTO;
-import org.apache.syncope.common.rest.api.service.RealmService;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- * Console client for invoking REST Realm's services.
- */
-public class RealmRestClient extends BaseRestClient {
+public class SCIMGroupConf implements Serializable {
 
-    private static final long serialVersionUID = -8549081557283519638L;
+    private static final long serialVersionUID = -2700011089067219156L;
 
-    public static List<RealmTO> list() {
-        return getService(RealmService.class).list(SyncopeConstants.ROOT_REALM);
+    private String externalId;
+
+    @JsonIgnore
+    public Map<String, String> asMap() {
+        Map<String, String> map = new HashMap<>();
+
+        if (externalId != null) {
+            map.put("externalId", externalId);
+        }
+
+        return Collections.unmodifiableMap(map);
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(final String externalId) {
+        this.externalId = externalId;
     }
 }

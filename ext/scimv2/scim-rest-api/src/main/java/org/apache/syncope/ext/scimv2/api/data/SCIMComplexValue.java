@@ -66,6 +66,6 @@ public class SCIMComplexValue extends SCIMBean {
 
     @JsonIgnore
     public boolean isEmpty() {
-        return value == null && display == null && type == null;
+        return value == null && display == null;
     }
 }

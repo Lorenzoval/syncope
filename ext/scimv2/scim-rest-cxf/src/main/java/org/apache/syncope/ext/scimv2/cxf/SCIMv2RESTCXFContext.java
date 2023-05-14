@@ -36,12 +36,12 @@ import org.apache.syncope.core.logic.UserLogic;
 import org.apache.syncope.core.logic.scim.SCIMConfManager;
 import org.apache.syncope.core.persistence.api.dao.GroupDAO;
 import org.apache.syncope.core.persistence.api.dao.UserDAO;
-import org.apache.syncope.ext.scimv2.api.service.GroupService;
+import org.apache.syncope.ext.scimv2.api.service.SCIMGroupService;
 import org.apache.syncope.ext.scimv2.api.service.SCIMService;
-import org.apache.syncope.ext.scimv2.api.service.UserService;
-import org.apache.syncope.ext.scimv2.cxf.service.GroupServiceImpl;
+import org.apache.syncope.ext.scimv2.api.service.SCIMUserService;
+import org.apache.syncope.ext.scimv2.cxf.service.SCIMGroupServiceImpl;
 import org.apache.syncope.ext.scimv2.cxf.service.SCIMServiceImpl;
-import org.apache.syncope.ext.scimv2.cxf.service.UserServiceImpl;
+import org.apache.syncope.ext.scimv2.cxf.service.SCIMUserServiceImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -72,32 +72,32 @@ public class SCIMv2RESTCXFContext {
     @ConditionalOnMissingBean(name = "scimv2Container")
     @Bean
     public Server scimv2Container(
-            final ApplicationContext ctx,
-            final Bus bus,
+            final SCIMService scimService,
+            final SCIMGroupService scimv2GroupService,
+            final SCIMUserService scimv2UserService,
+            final GZIPInInterceptor gzipInInterceptor,
+            final GZIPOutInterceptor gzipOutInterceptor,
+            final JAXRSBeanValidationInInterceptor validationInInterceptor,
             final JacksonJsonProvider scimJacksonJsonProvider,
             final SCIMExceptionMapper scimExceptionMapper,
-            final AddETagFilter scimAddETagFilter) {
+            final AddETagFilter scimAddETagFilter,
+            final Bus bus,
+            final ApplicationContext ctx) {
 
         SpringJAXRSServerFactoryBean scimv2Container = new SpringJAXRSServerFactoryBean();
         scimv2Container.setBus(bus);
         scimv2Container.setAddress("/scim");
         scimv2Container.setStaticSubresourceResolution(true);
-        scimv2Container.setBasePackages(List.of(
-                "org.apache.syncope.ext.scimv2.api.service",
-                "org.apache.syncope.ext.scimv2.cxf.service"));
+
         scimv2Container.setProperties(Map.of("convert.wadl.resources.to.dom", "false"));
 
-        scimv2Container.setInInterceptors(List.of(
-                ctx.getBean(GZIPInInterceptor.class),
-                ctx.getBean(JAXRSBeanValidationInInterceptor.class)));
+        scimv2Container.setServiceBeans(List.of(scimService, scimv2GroupService, scimv2UserService));
 
-        scimv2Container.setOutInterceptors(List.of(
-                ctx.getBean(GZIPOutInterceptor.class)));
+        scimv2Container.setInInterceptors(List.of(gzipInInterceptor, validationInInterceptor));
 
-        scimv2Container.setProviders(List.of(
-                scimJacksonJsonProvider,
-                scimExceptionMapper,
-                scimAddETagFilter));
+        scimv2Container.setOutInterceptors(List.of(gzipOutInterceptor));
+
+        scimv2Container.setProviders(List.of(scimJacksonJsonProvider, scimExceptionMapper, scimAddETagFilter));
 
         scimv2Container.setApplicationContext(ctx);
         return scimv2Container.create();
@@ -119,7 +119,7 @@ public class SCIMv2RESTCXFContext {
 
     @ConditionalOnMissingBean
     @Bean
-    public GroupService scimv2GroupService(
+    public SCIMGroupService scimv2GroupService(
             final UserDAO userDAO,
             final GroupDAO groupDAO,
             final UserLogic userLogic,
@@ -127,12 +127,12 @@ public class SCIMv2RESTCXFContext {
             final SCIMDataBinder binder,
             final SCIMConfManager confManager) {
 
-        return new GroupServiceImpl(userDAO, groupDAO, userLogic, groupLogic, binder, confManager);
+        return new SCIMGroupServiceImpl(userDAO, groupDAO, userLogic, groupLogic, binder, confManager);
     }
 
     @ConditionalOnMissingBean
     @Bean
-    public UserService scimv2UserService(
+    public SCIMUserService scimv2UserService(
             final UserDAO userDAO,
             final GroupDAO groupDAO,
             final UserLogic userLogic,
@@ -140,6 +140,6 @@ public class SCIMv2RESTCXFContext {
             final SCIMDataBinder binder,
             final SCIMConfManager confManager) {
 
-        return new UserServiceImpl(userDAO, groupDAO, userLogic, groupLogic, binder, confManager);
+        return new SCIMUserServiceImpl(userDAO, groupDAO, userLogic, groupLogic, binder, confManager);
     }
 }

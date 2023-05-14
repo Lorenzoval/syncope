@@ -95,7 +95,6 @@ import org.apache.syncope.core.provisioning.api.utils.FormatUtils;
 import org.apache.syncope.core.provisioning.java.utils.ConnObjectUtils;
 import org.apache.syncope.core.provisioning.java.utils.MappingUtils;
 import org.apache.syncope.core.spring.security.Encryptor;
-import org.apache.syncope.core.spring.security.PasswordGenerator;
 import org.identityconnectors.framework.common.FrameworkUtil;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.AttributeBuilder;
@@ -135,8 +134,6 @@ public class DefaultMappingManager implements MappingManager {
 
     protected final VirAttrCache virAttrCache;
 
-    protected final PasswordGenerator passwordGenerator;
-
     protected final AnyUtilsFactory anyUtilsFactory;
 
     protected final IntAttrNameParser intAttrNameParser;
@@ -153,7 +150,6 @@ public class DefaultMappingManager implements MappingManager {
             final DerAttrHandler derAttrHandler,
             final VirAttrHandler virAttrHandler,
             final VirAttrCache virAttrCache,
-            final PasswordGenerator passwordGenerator,
             final AnyUtilsFactory anyUtilsFactory,
             final IntAttrNameParser intAttrNameParser) {
 
@@ -168,7 +164,6 @@ public class DefaultMappingManager implements MappingManager {
         this.derAttrHandler = derAttrHandler;
         this.virAttrHandler = virAttrHandler;
         this.virAttrCache = virAttrCache;
-        this.passwordGenerator = passwordGenerator;
         this.anyUtilsFactory = anyUtilsFactory;
         this.intAttrNameParser = intAttrNameParser;
     }
@@ -512,9 +507,7 @@ public class DefaultMappingManager implements MappingManager {
         }
     }
 
-    protected String getPasswordAttrValue(
-            final ExternalResource resource, final Account account, final String defaultValue) {
-
+    protected String getPasswordAttrValue(final Account account, final String defaultValue) {
         String passwordAttrValue;
         if (account instanceof LinkedAccount) {
             if (account.getPassword() != null) {
@@ -530,10 +523,6 @@ public class DefaultMappingManager implements MappingManager {
             } else {
                 passwordAttrValue = null;
             }
-        }
-
-        if (passwordAttrValue == null && resource.isRandomPwdIfNotProvided()) {
-            passwordAttrValue = passwordGenerator.generate(resource);
         }
 
         return passwordAttrValue;
@@ -604,8 +593,7 @@ public class DefaultMappingManager implements MappingManager {
             if (item.isConnObjectKey()) {
                 result = Pair.of(objValues.isEmpty() ? null : objValues.iterator().next().toString(), null);
             } else if (item.isPassword() && any instanceof User) {
-                String passwordAttrValue =
-                        getPasswordAttrValue(resource, passwordAccountGetter.apply((User) any), password);
+                String passwordAttrValue = getPasswordAttrValue(passwordAccountGetter.apply((User) any), password);
                 if (passwordAttrValue == null) {
                     result = null;
                 } else {

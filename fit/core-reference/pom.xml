@@ -1592,6 +1592,7 @@ under the License.
                   <cargo.jvmargs>-Djava.net.preferIPv4Stack=true -Dspring.profiles.active=embedded,wildfly
                     -XX:+UseG1GC -Xmx2048m -Xms1024m
                     --add-opens java.base/java.util=ALL-UNNAMED
+                    --add-opens=java.base/java.lang=ALL-UNNAMED
                     --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED</cargo.jvmargs>
                 </properties>
               </configuration>

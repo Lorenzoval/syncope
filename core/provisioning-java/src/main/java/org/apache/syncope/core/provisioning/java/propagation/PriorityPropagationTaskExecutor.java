@@ -29,12 +29,9 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.apache.syncope.common.lib.types.ExecStatus;
 import org.apache.syncope.core.persistence.api.attrvalue.validation.PlainAttrValidationManager;
-import org.apache.syncope.core.persistence.api.dao.AnyObjectDAO;
 import org.apache.syncope.core.persistence.api.dao.ExternalResourceDAO;
-import org.apache.syncope.core.persistence.api.dao.GroupDAO;
 import org.apache.syncope.core.persistence.api.dao.PlainSchemaDAO;
 import org.apache.syncope.core.persistence.api.dao.TaskDAO;
-import org.apache.syncope.core.persistence.api.dao.UserDAO;
 import org.apache.syncope.core.persistence.api.entity.AnyUtilsFactory;
 import org.apache.syncope.core.persistence.api.entity.Exec;
 import org.apache.syncope.core.persistence.api.entity.task.PropagationTask;
@@ -91,9 +88,6 @@ public class PriorityPropagationTaskExecutor extends AbstractPropagationTaskExec
     public PriorityPropagationTaskExecutor(
             final ConnectorManager connectorManager,
             final ConnObjectUtils connObjectUtils,
-            final UserDAO userDAO,
-            final GroupDAO groupDAO,
-            final AnyObjectDAO anyObjectDAO,
             final TaskDAO taskDAO,
             final ExternalResourceDAO resourceDAO,
             final PlainSchemaDAO plainSchemaDAO,
@@ -109,9 +103,6 @@ public class PriorityPropagationTaskExecutor extends AbstractPropagationTaskExec
 
         super(connectorManager,
                 connObjectUtils,
-                userDAO,
-                groupDAO,
-                anyObjectDAO,
                 taskDAO,
                 resourceDAO,
                 plainSchemaDAO,

@@ -24,7 +24,7 @@ import org.apache.syncope.core.persistence.api.entity.user.User
 @CompileStatic
 class MyPasswordRule implements PasswordRule {
   
-  void enforce(User user) {
+  void enforce(User user, String clearPassword) {
   }
 
   void enforce(LinkedAccount account) {

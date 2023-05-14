@@ -447,7 +447,6 @@ public class ProvisioningContext {
     @ConditionalOnMissingBean
     @Bean
     public MappingManager mappingManager(
-            final PasswordGenerator passwordGenerator,
             final AnyUtilsFactory anyUtilsFactory,
             final AnyTypeDAO anyTypeDAO,
             final UserDAO userDAO,
@@ -474,7 +473,6 @@ public class ProvisioningContext {
                 derAttrHandler,
                 virAttrHandler,
                 virAttrCache,
-                passwordGenerator,
                 anyUtilsFactory,
                 intAttrNameParser);
     }
@@ -553,9 +551,6 @@ public class ProvisioningContext {
             final AnyUtilsFactory anyUtilsFactory,
             final ConnectorManager connectorManager,
             final ConnObjectUtils connObjectUtils,
-            final UserDAO userDAO,
-            final GroupDAO groupDAO,
-            final AnyObjectDAO anyObjectDAO,
             final TaskDAO taskDAO,
             final ExternalResourceDAO resourceDAO,
             final PlainSchemaDAO plainSchemaDAO,
@@ -569,9 +564,6 @@ public class ProvisioningContext {
         return new PriorityPropagationTaskExecutor(
                 connectorManager,
                 connObjectUtils,
-                userDAO,
-                groupDAO,
-                anyObjectDAO,
                 taskDAO,
                 resourceDAO,
                 plainSchemaDAO,

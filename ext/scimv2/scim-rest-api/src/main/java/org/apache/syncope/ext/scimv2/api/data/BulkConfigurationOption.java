@@ -47,5 +47,4 @@ public class BulkConfigurationOption extends ConfigurationOption {
     public int getMaxPayloadSize() {
         return maxPayloadSize;
     }
-
 }
