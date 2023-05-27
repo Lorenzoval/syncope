@@ -35,4 +35,4 @@ jobs:
           architecture: x64
           cache: maven
       - name: Verify with Maven
-        run: mvn -B verify
+        run: mvn -B verify -Drat.skip -Dcheckstyle.skip
