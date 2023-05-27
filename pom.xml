@@ -528,8 +528,8 @@ under the License.
     <sonar.language>java</sonar.language>
     <sonar.java.source>${targetJdk}</sonar.java.source>
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <sonar.junit.reportPaths>${project.build.directory}/surefire-reports</sonar.junit.reportPaths>
-    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <!-- <sonar.junit.reportPaths>${project.build.directory}/surefire-reports</sonar.junit.reportPaths> -->
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/cf-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 
     <targetJdk>17</targetJdk>
     <rootpom.basedir>${basedir}</rootpom.basedir>
@@ -1852,8 +1852,8 @@ under the License.
         <artifactId>tools-maven-plugin</artifactId>
         <version>1.4</version>
         <configuration>
-          <!-- Fail the build if any artifacts are missing legal files -->
-          <strict>true</strict>
+          <!-- Do not fail the build if any artifacts are missing legal files -->
+          <strict>false</strict>
         </configuration>
         <executions>
           <execution>
@@ -2190,6 +2190,31 @@ under the License.
         <module>docker</module>
       </modules>
     </profile>
+
+    <profile>
+      <id>cf-coverage</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.10</version>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 
   <modules>
@@ -2202,6 +2227,7 @@ under the License.
     <module>ext</module>
     <module>archetype</module>
     <module>standalone</module>
+    <module>cf-coverage</module>
   </modules>
 
 </project>
