@@ -18,7 +18,7 @@
 #
 
 name: Syncope CI Build and Analyze
-run-name:  ${{ github.actor }} is building and analyzing Syncope
+run-name: ${{ github.actor }} is building and analyzing Syncope
 on: [ push ]
 jobs:
   build:
