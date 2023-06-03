@@ -54,6 +54,7 @@ import org.apache.syncope.core.persistence.api.dao.MailTemplateDAO;
 import org.apache.syncope.core.persistence.api.dao.NotificationDAO;
 import org.apache.syncope.core.persistence.api.dao.OIDCJWKSDAO;
 import org.apache.syncope.core.persistence.api.dao.OIDCRPClientAppDAO;
+import org.apache.syncope.core.persistence.api.dao.PersistenceInfoDAO;
 import org.apache.syncope.core.persistence.api.dao.PlainAttrDAO;
 import org.apache.syncope.core.persistence.api.dao.PlainAttrValueDAO;
 import org.apache.syncope.core.persistence.api.dao.PlainSchemaDAO;
@@ -111,6 +112,7 @@ import org.apache.syncope.core.persistence.jpa.dao.JPAMailTemplateDAO;
 import org.apache.syncope.core.persistence.jpa.dao.JPANotificationDAO;
 import org.apache.syncope.core.persistence.jpa.dao.JPAOIDCJWKSDAO;
 import org.apache.syncope.core.persistence.jpa.dao.JPAOIDCRPClientAppDAO;
+import org.apache.syncope.core.persistence.jpa.dao.JPAPersistenceInfoDAO;
 import org.apache.syncope.core.persistence.jpa.dao.JPAPlainAttrDAO;
 import org.apache.syncope.core.persistence.jpa.dao.JPAPlainAttrValueDAO;
 import org.apache.syncope.core.persistence.jpa.dao.JPAPlainSchemaDAO;
@@ -142,7 +144,6 @@ import org.apache.syncope.core.persistence.jpa.spring.MultiJarAwarePersistenceUn
 import org.apache.syncope.core.spring.security.SecurityProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -250,10 +251,9 @@ public class PersistenceContext {
     @Bean
     public RuntimeDomainLoader runtimeDomainLoader(
             final DomainHolder domainHolder,
-            final DomainRegistry domainRegistry,
-            final ListableBeanFactory beanFactory) {
+            final DomainRegistry domainRegistry) {
 
-        return new RuntimeDomainLoader(domainHolder, domainRegistry, beanFactory);
+        return new RuntimeDomainLoader(domainHolder, domainRegistry);
     }
 
     @ConditionalOnMissingBean
@@ -307,6 +307,12 @@ public class PersistenceContext {
     @Bean
     public EntityCacheDAO entityCacheDAO() {
         return new JPAEntityCacheDAO();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public PersistenceInfoDAO persistenceInfoDAO() {
+        return new JPAPersistenceInfoDAO();
     }
 
     @ConditionalOnMissingBean
