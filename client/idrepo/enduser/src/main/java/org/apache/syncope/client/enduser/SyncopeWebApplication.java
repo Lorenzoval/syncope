@@ -26,8 +26,6 @@ import de.agilecoders.wicket.core.settings.BootstrapSettings;
 import de.agilecoders.wicket.core.settings.IBootstrapSettings;
 import de.agilecoders.wicket.core.settings.SingleThemeProvider;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.apache.syncope.client.enduser.init.ClassPathScanImplementationLookup;
 import org.apache.syncope.client.enduser.layout.UserFormLayoutInfo;
@@ -37,8 +35,7 @@ import org.apache.syncope.client.enduser.pages.Login;
 import org.apache.syncope.client.enduser.pages.MustChangePassword;
 import org.apache.syncope.client.enduser.pages.SelfConfirmPasswordReset;
 import org.apache.syncope.client.enduser.panels.Sidebar;
-import org.apache.syncope.client.lib.AnonymousAuthenticationHandler;
-import org.apache.syncope.client.lib.SyncopeClient;
+import org.apache.syncope.client.lib.SyncopeAnonymousClient;
 import org.apache.syncope.client.lib.SyncopeClientFactoryBean;
 import org.apache.syncope.client.ui.commons.SyncopeUIRequestCycleListener;
 import org.apache.syncope.client.ui.commons.annotations.Resource;
@@ -73,9 +70,6 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
 
     protected static final Logger LOG = LoggerFactory.getLogger(SyncopeWebApplication.class);
 
-    public static final List<Locale> SUPPORTED_LOCALES = List.of(
-            Locale.ENGLISH, Locale.ITALIAN, new Locale("pt", "BR"), new Locale("ru"), Locale.JAPANESE);
-
     protected static final JsonMapper MAPPER = JsonMapper.builder().findAndAddModules().build();
 
     public static SyncopeWebApplication get() {
@@ -104,6 +98,56 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
         this.serviceOps = serviceOps;
     }
 
+    protected SyncopeUIRequestCycleListener buildSyncopeUIRequestCycleListener() {
+        return new SyncopeUIRequestCycleListener() {
+
+            @Override
+            protected boolean isSignedIn() {
+                return SyncopeEnduserSession.get().isAuthenticated();
+            }
+
+            @Override
+            protected void invalidateSession() {
+                SyncopeEnduserSession.get().invalidate();
+            }
+
+            @Override
+            protected IRequestablePage getErrorPage(final PageParameters errorParameters) {
+                return new Login(errorParameters);
+            }
+        };
+    }
+
+    protected void initSecurity() {
+        if (props.isxForward()) {
+            XForwardedRequestWrapperFactory.Config config = new XForwardedRequestWrapperFactory.Config();
+            config.setProtocolHeader(props.getxForwardProtocolHeader());
+            config.setHttpServerPort(props.getxForwardHttpPort());
+            config.setHttpsServerPort(props.getxForwardHttpsPort());
+
+            XForwardedRequestWrapperFactory factory = new XForwardedRequestWrapperFactory();
+            factory.setConfig(config);
+            getFilterFactoryManager().add(factory);
+        }
+
+        if (props.isCsrf()) {
+            getRequestCycleListeners().add(new ResourceIsolationRequestCycleListener());
+        }
+
+        getCspSettings().blocking().unsafeInline();
+
+        getRequestCycleListeners().add(new IRequestCycleListener() {
+
+            @Override
+            public void onEndRequest(final RequestCycle cycle) {
+                if (cycle.getResponse() instanceof WebResponse) {
+                    props.getSecurityHeaders().
+                            forEach((name, value) -> ((WebResponse) cycle.getResponse()).setHeader(name, value));
+                }
+            }
+        });
+    }
+
     @Override
     protected void init() {
         super.init();
@@ -126,50 +170,9 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
         getMarkupSettings().setStripWicketTags(true);
         getMarkupSettings().setCompressWhitespace(true);
 
-        getRequestCycleListeners().add(new SyncopeUIRequestCycleListener() {
+        getRequestCycleListeners().add(buildSyncopeUIRequestCycleListener());
 
-            @Override
-            protected boolean isSignedIn() {
-                return SyncopeEnduserSession.get().isAuthenticated();
-            }
-
-            @Override
-            protected void invalidateSession() {
-                SyncopeEnduserSession.get().invalidate();
-            }
-
-            @Override
-            protected IRequestablePage getErrorPage(final PageParameters errorParameters) {
-                return new Login(errorParameters);
-            }
-        });
-
-        if (props.isxForward()) {
-            XForwardedRequestWrapperFactory.Config config = new XForwardedRequestWrapperFactory.Config();
-            config.setProtocolHeader(props.getxForwardProtocolHeader());
-            config.setHttpServerPort(props.getxForwardHttpPort());
-            config.setHttpsServerPort(props.getxForwardHttpsPort());
-
-            XForwardedRequestWrapperFactory factory = new XForwardedRequestWrapperFactory();
-            factory.setConfig(config);
-            getFilterFactoryManager().add(factory);
-        }
-
-        if (props.isCsrf()) {
-            getRequestCycleListeners().add(new ResourceIsolationRequestCycleListener());
-        }
-
-        getRequestCycleListeners().add(new IRequestCycleListener() {
-
-            @Override
-            public void onEndRequest(final RequestCycle cycle) {
-                if (cycle.getResponse() instanceof WebResponse) {
-                    props.getSecurityHeaders().
-                            forEach((name, value) -> ((WebResponse) cycle.getResponse()).setHeader(name, value));
-                }
-            }
-        });
-        getCspSettings().blocking().unsafeInline();
+        initSecurity();
 
         // Confirm password reset page
         mountPage("/confirmpasswordreset", SelfConfirmPasswordReset.class);
@@ -251,9 +254,8 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
         return new SyncopeEnduserSession(request);
     }
 
-    public SyncopeClient newAnonymousClient() {
-        return newClientFactory().create(
-                new AnonymousAuthenticationHandler(props.getAnonymousUser(), props.getAnonymousKey()));
+    public SyncopeAnonymousClient newAnonymousClient() {
+        return newClientFactory().createAnonymous(props.getAnonymousUser(), props.getAnonymousKey());
     }
 
     public SyncopeClientFactoryBean newClientFactory() {
@@ -281,10 +283,6 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
 
     public String getAnonymousUser() {
         return props.getAnonymousUser();
-    }
-
-    public String getAnonymousKey() {
-        return props.getAnonymousKey();
     }
 
     public boolean isCaptchaEnabled() {

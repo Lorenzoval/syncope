@@ -44,6 +44,7 @@ import org.apache.syncope.core.persistence.api.dao.AnyTypeDAO;
 import org.apache.syncope.core.persistence.api.dao.ExternalResourceDAO;
 import org.apache.syncope.core.persistence.api.dao.GroupDAO;
 import org.apache.syncope.core.persistence.api.dao.NotificationDAO;
+import org.apache.syncope.core.persistence.api.dao.PersistenceInfoDAO;
 import org.apache.syncope.core.persistence.api.dao.PolicyDAO;
 import org.apache.syncope.core.persistence.api.dao.RoleDAO;
 import org.apache.syncope.core.persistence.api.dao.SecurityQuestionDAO;
@@ -64,7 +65,6 @@ import org.springframework.boot.actuate.info.Info;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 
 public class DefaultSyncopeCoreInfoContributor implements SyncopeCoreInfoContributor, InfoContributor {
@@ -169,6 +169,8 @@ public class DefaultSyncopeCoreInfoContributor implements SyncopeCoreInfoContrib
 
     protected final Map<String, ThreadPoolTaskExecutor> taskExecutors;
 
+    protected final PersistenceInfoDAO persistenceInfoDAO;
+
     public DefaultSyncopeCoreInfoContributor(
             final AnyTypeDAO anyTypeDAO,
             final AnyTypeClassDAO anyTypeClassDAO,
@@ -185,7 +187,8 @@ public class DefaultSyncopeCoreInfoContributor implements SyncopeCoreInfoContrib
             final ConfParamOps confParamOps,
             final ConnIdBundleManager bundleManager,
             final ImplementationLookup implLookup,
-            final Map<String, ThreadPoolTaskExecutor> taskExecutors) {
+            final Map<String, ThreadPoolTaskExecutor> taskExecutors,
+            final PersistenceInfoDAO persistenceInfoDAO) {
 
         this.anyTypeDAO = anyTypeDAO;
         this.anyTypeClassDAO = anyTypeClassDAO;
@@ -203,6 +206,7 @@ public class DefaultSyncopeCoreInfoContributor implements SyncopeCoreInfoContrib
         this.bundleManager = bundleManager;
         this.implLookup = implLookup;
         this.taskExecutors = taskExecutors;
+        this.persistenceInfoDAO = persistenceInfoDAO;
     }
 
     protected boolean isSelfRegAllowed() {
@@ -330,12 +334,13 @@ public class DefaultSyncopeCoreInfoContributor implements SyncopeCoreInfoContrib
         }
     }
 
-    @PreAuthorize("isAuthenticated()")
     @Transactional(readOnly = true)
     @Override
     public void contribute(final Info.Builder builder) {
         buildPlatform();
         builder.withDetail("platform", PLATFORM_INFO);
+
+        builder.withDetail("persistence", persistenceInfoDAO.info());
 
         builder.withDetail("numbers", buildNumbers());
 

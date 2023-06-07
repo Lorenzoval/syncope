@@ -16,11 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.syncope.client.lib;
+package org.apache.syncope.common.lib.report;
 
-/**
- * Empty implementation not providing any real authentication capability.
- */
-public class NoAuthenticationHandler implements AuthenticationHandler {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+@Target({ ElementType.FIELD })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SearchCondition {
+
+    String type() default "USER";
 }

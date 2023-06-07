@@ -18,7 +18,6 @@
  */
 package org.apache.syncope.client.console;
 
-
 import com.giffing.wicket.spring.boot.starter.app.WicketBootSecuredWebApplication;
 import de.agilecoders.wicket.core.Bootstrap;
 import de.agilecoders.wicket.core.settings.BootstrapSettings;
@@ -44,8 +43,7 @@ import org.apache.syncope.client.console.pages.Login;
 import org.apache.syncope.client.console.pages.MustChangePassword;
 import org.apache.syncope.client.console.rest.RealmRestClient;
 import org.apache.syncope.client.console.wizards.any.UserFormFinalizer;
-import org.apache.syncope.client.lib.AnonymousAuthenticationHandler;
-import org.apache.syncope.client.lib.SyncopeClient;
+import org.apache.syncope.client.lib.SyncopeAnonymousClient;
 import org.apache.syncope.client.lib.SyncopeClientFactoryBean;
 import org.apache.syncope.client.ui.commons.Constants;
 import org.apache.syncope.client.ui.commons.SyncopeUIRequestCycleListener;
@@ -74,7 +72,6 @@ import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.ClassUtils;
 
@@ -108,7 +105,7 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
 
     protected final AccessPolicyConfProvider accessPolicyConfProvider;
 
-    protected final ApplicationContext ctx;
+    protected final List<PolicyTabProvider> policyTabProviders;
 
     public SyncopeWebApplication(
             final ConsoleProperties props,
@@ -122,7 +119,7 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
             final VirSchemaDetailsPanelProvider virSchemaDetailsPanelProvider,
             final ImplementationInfoProvider implementationInfoProvider,
             final AccessPolicyConfProvider accessPolicyConfProvider,
-            final ApplicationContext ctx) {
+            final List<PolicyTabProvider> policyTabProviders) {
 
         this.props = props;
         this.lookup = lookup;
@@ -135,7 +132,57 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
         this.virSchemaDetailsPanelProvider = virSchemaDetailsPanelProvider;
         this.implementationInfoProvider = implementationInfoProvider;
         this.accessPolicyConfProvider = accessPolicyConfProvider;
-        this.ctx = ctx;
+        this.policyTabProviders = policyTabProviders;
+    }
+
+    protected SyncopeUIRequestCycleListener buildSyncopeUIRequestCycleListener() {
+        return new SyncopeUIRequestCycleListener() {
+
+            @Override
+            protected boolean isSignedIn() {
+                return SyncopeConsoleSession.get().isSignedIn();
+            }
+
+            @Override
+            protected void invalidateSession() {
+                SyncopeConsoleSession.get().invalidate();
+            }
+
+            @Override
+            protected IRequestablePage getErrorPage(final PageParameters errorParameters) {
+                return new Login(errorParameters);
+            }
+        };
+    }
+
+    protected void initSecurity() {
+        if (props.isxForward()) {
+            XForwardedRequestWrapperFactory.Config config = new XForwardedRequestWrapperFactory.Config();
+            config.setProtocolHeader(props.getxForwardProtocolHeader());
+            config.setHttpServerPort(props.getxForwardHttpPort());
+            config.setHttpsServerPort(props.getxForwardHttpsPort());
+
+            XForwardedRequestWrapperFactory factory = new XForwardedRequestWrapperFactory();
+            factory.setConfig(config);
+            getFilterFactoryManager().add(factory);
+        }
+
+        if (props.isCsrf()) {
+            getRequestCycleListeners().add(new WebSocketAwareResourceIsolationRequestCycleListener());
+        }
+
+        getCspSettings().blocking().unsafeInline();
+
+        getRequestCycleListeners().add(new IRequestCycleListener() {
+
+            @Override
+            public void onEndRequest(final RequestCycle cycle) {
+                if (cycle.getResponse() instanceof WebResponse && !(cycle.getResponse() instanceof WebSocketResponse)) {
+                    props.getSecurityHeaders().
+                            forEach((name, value) -> ((WebResponse) cycle.getResponse()).setHeader(name, value));
+                }
+            }
+        });
     }
 
     @Override
@@ -163,50 +210,9 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
         getMarkupSettings().setStripWicketTags(true);
         getMarkupSettings().setCompressWhitespace(true);
 
-        getRequestCycleListeners().add(new SyncopeUIRequestCycleListener() {
+        getRequestCycleListeners().add(buildSyncopeUIRequestCycleListener());
 
-            @Override
-            protected boolean isSignedIn() {
-                return SyncopeConsoleSession.get().isSignedIn();
-            }
-
-            @Override
-            protected void invalidateSession() {
-                SyncopeConsoleSession.get().invalidate();
-            }
-
-            @Override
-            protected IRequestablePage getErrorPage(final PageParameters errorParameters) {
-                return new Login(errorParameters);
-            }
-        });
-
-        if (props.isxForward()) {
-            XForwardedRequestWrapperFactory.Config config = new XForwardedRequestWrapperFactory.Config();
-            config.setProtocolHeader(props.getxForwardProtocolHeader());
-            config.setHttpServerPort(props.getxForwardHttpPort());
-            config.setHttpsServerPort(props.getxForwardHttpsPort());
-
-            XForwardedRequestWrapperFactory factory = new XForwardedRequestWrapperFactory();
-            factory.setConfig(config);
-            getFilterFactoryManager().add(factory);
-        }
-
-        if (props.isCsrf()) {
-            getRequestCycleListeners().add(new WebSocketAwareResourceIsolationRequestCycleListener());
-        }
-
-        getRequestCycleListeners().add(new IRequestCycleListener() {
-
-            @Override
-            public void onEndRequest(final RequestCycle cycle) {
-                if (cycle.getResponse() instanceof WebResponse && !(cycle.getResponse() instanceof WebSocketResponse)) {
-                    props.getSecurityHeaders().
-                            forEach((name, value) -> ((WebResponse) cycle.getResponse()).setHeader(name, value));
-                }
-            }
-        });
-        getCspSettings().blocking().unsafeInline();
+        initSecurity();
 
         mountPage("/login", getSignInPageClass());
 
@@ -272,9 +278,8 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
         return executor;
     }
 
-    public SyncopeClient newAnonymousClient() {
-        return newClientFactory().create(
-                new AnonymousAuthenticationHandler(props.getAnonymousUser(), props.getAnonymousKey()));
+    public SyncopeAnonymousClient newAnonymousClient() {
+        return newClientFactory().createAnonymous(props.getAnonymousUser(), props.getAnonymousKey());
     }
 
     public SyncopeClientFactoryBean newClientFactory() {
@@ -347,7 +352,7 @@ public class SyncopeWebApplication extends WicketBootSecuredWebApplication {
     }
 
     public Collection<PolicyTabProvider> getPolicyTabProviders() {
-        return ctx.getBeansOfType(PolicyTabProvider.class).values();
+        return policyTabProviders;
     }
 
     public List<UserFormFinalizer> getFormFinalizers(final AjaxWizard.Mode mode) {

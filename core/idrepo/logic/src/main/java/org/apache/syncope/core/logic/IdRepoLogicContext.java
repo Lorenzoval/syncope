@@ -103,13 +103,13 @@ import org.apache.syncope.core.provisioning.api.notification.NotificationJobDele
 import org.apache.syncope.core.provisioning.api.notification.NotificationManager;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationManager;
 import org.apache.syncope.core.provisioning.api.propagation.PropagationTaskExecutor;
+import org.apache.syncope.core.provisioning.api.rules.RuleEnforcer;
 import org.apache.syncope.core.provisioning.java.utils.TemplateUtils;
 import org.apache.syncope.core.spring.security.SecurityProperties;
 import org.apache.syncope.core.workflow.api.AnyObjectWorkflowAdapter;
 import org.apache.syncope.core.workflow.api.GroupWorkflowAdapter;
 import org.apache.syncope.core.workflow.api.UserWorkflowAdapter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -144,9 +144,9 @@ public class IdRepoLogicContext {
     @Bean
     public AuditLoader auditLoader(
             final AuditAccessor auditAccessor,
-            final ApplicationContext ctx) {
+            final List<AuditAppender> auditAppenders) {
 
-        return new AuditLoader(auditAccessor, ctx);
+        return new AuditLoader(auditAccessor, auditAppenders);
     }
 
     @ConditionalOnMissingBean(name = "defaultAuditAppenders")
@@ -254,7 +254,7 @@ public class IdRepoLogicContext {
             final EntityFactory entityFactory,
             final AuditDataBinder binder,
             final AuditManager auditManager,
-            final ApplicationContext ctx) {
+            final List<AuditAppender> auditAppenders) {
 
         return new AuditLogic(
                 auditConfDAO,
@@ -262,7 +262,7 @@ public class IdRepoLogicContext {
                 entityFactory,
                 binder,
                 auditManager,
-                ctx);
+                auditAppenders);
     }
 
     @ConditionalOnMissingBean
@@ -546,11 +546,13 @@ public class IdRepoLogicContext {
             final UserDAO userDAO,
             final GroupDAO groupDAO,
             final AnySearchDAO anySearchDAO,
+            final ExternalResourceDAO resourceDAO,
             final AccessTokenDAO accessTokenDAO,
             final DelegationDAO delegationDAO,
             final ConfParamOps confParamOps,
             final UserProvisioningManager provisioningManager,
-            final SyncopeLogic syncopeLogic) {
+            final SyncopeLogic syncopeLogic,
+            final RuleEnforcer ruleEnforcer) {
 
         return new UserLogic(
                 realmDAO,
@@ -559,11 +561,13 @@ public class IdRepoLogicContext {
                 userDAO,
                 groupDAO,
                 anySearchDAO,
+                resourceDAO,
                 accessTokenDAO,
                 delegationDAO,
                 confParamOps,
                 binder,
                 provisioningManager,
-                syncopeLogic);
+                syncopeLogic,
+                ruleEnforcer);
     }
 }
