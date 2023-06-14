@@ -196,7 +196,6 @@ public class EncryptorTests {
     public static class EncryptorVerifyTest extends EncryptorTest {
         private final boolean expected;
         private final String value;
-
         private final CipherAlgorithm cipherAlgorithm;
         private final String encodedValue;
         private Encryptor sut;
@@ -265,6 +264,51 @@ public class EncryptorTests {
         public void testVerify() {
             boolean result = this.sut.verify(this.value, this.cipherAlgorithm, this.encodedValue);
             Assert.assertEquals(result, this.expected);
+        }
+
+    }
+
+    @RunWith(Parameterized.class)
+    public static class EncryptorEncodeDecodeTest extends EncryptorTest {
+        private final Class<Throwable> exceptionClass;
+        private final String secretKey;
+        private final boolean restart;
+        private Encryptor sut;
+
+
+        public EncryptorEncodeDecodeTest(Class<Throwable> exceptionClass, String secretKey, boolean restart) {
+            this.exceptionClass = exceptionClass;
+            this.secretKey = secretKey;
+            this.restart = restart;
+        }
+
+        @Parameterized.Parameters
+        public static Collection<Object[]> getParameters() {
+            return Arrays.asList(new Object[][]{
+                    {null, "", false},
+                    {BadPaddingException.class, "", true},
+                    {null, KEY, false},
+                    {null, KEY, true},
+            });
+        }
+
+        @Before
+        public void init() throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+                IllegalAccessException {
+            this.sut = newEncryptor(secretKey);
+        }
+
+        @Test
+        public void testEncodeDecode() throws UnsupportedEncodingException, NoSuchPaddingException,
+                IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException,
+                InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+            String encoded = this.sut.encode(PASSWORD, CipherAlgorithm.AES);
+            if (restart)
+                this.sut = newEncryptor(this.secretKey);
+            if (this.exceptionClass == null)
+                Assert.assertEquals(this.sut.decode(encoded, CipherAlgorithm.AES), PASSWORD);
+            else
+                Assert.assertThrows(this.exceptionClass, () -> this.sut.decode(encoded, CipherAlgorithm.AES));
         }
 
     }
