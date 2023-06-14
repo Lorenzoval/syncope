@@ -210,5 +210,41 @@ under the License.
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>mutation-coverage</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <pitest.version>1.14.1</pitest.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>${pitest.version}</version>
+            <configuration>
+              <targetClasses>
+                <param>org.apache.syncope.core.spring.security.Encryptor</param>
+              </targetClasses>
+              <targetTests>
+                <param>org.apache.syncope.core.spring.security.EncryptorTests</param>
+              </targetTests>
+            </configuration>
+            <executions>
+              <execution>
+                <id>Generate PIT report</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
