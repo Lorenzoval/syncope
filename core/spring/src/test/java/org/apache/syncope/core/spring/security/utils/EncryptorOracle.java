@@ -80,4 +80,44 @@ public class EncryptorOracle {
         return Base64.getEncoder().encodeToString(cipher.doFinal(value.getBytes(StandardCharsets.UTF_8)));
     }
 
+    public static String encode(String value, CipherAlgorithm cipherAlgorithm, String secretKey)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException,
+            BadPaddingException {
+        String digest;
+        switch (cipherAlgorithm) {
+            case SHA1, SHA256, SHA512 -> {
+                StandardStringDigester digester = new StandardStringDigester();
+                digester.setAlgorithm(cipherAlgorithm.getAlgorithm());
+                digester.setIterations(1);
+                digester.setSaltSizeBytes(0);
+                digester.setStringOutputType(CommonUtils.STRING_OUTPUT_TYPE_HEXADECIMAL);
+                digest = digester.digest(value);
+            }
+            case SMD5, SSHA1, SSHA512, SSHA256 -> {
+                SecurityProperties securityProperties = new SecurityProperties();
+                StandardStringDigester digester = new StandardStringDigester();
+                digester.setAlgorithm(cipherAlgorithm.getAlgorithm().replaceFirst("S-", ""));
+                digester.setIterations(securityProperties.getDigester().getSaltIterations());
+                digester.setSaltSizeBytes(securityProperties.getDigester().getSaltSizeBytes());
+                digester.setInvertPositionOfPlainSaltInEncryptionResults(
+                        securityProperties.getDigester().isInvertPositionOfPlainSaltInEncryptionResults());
+                digester.setInvertPositionOfSaltInMessageBeforeDigesting(
+                        securityProperties.getDigester().isInvertPositionOfSaltInMessageBeforeDigesting());
+                digester.setUseLenientSaltSizeCheck(
+                        securityProperties.getDigester().isUseLenientSaltSizeCheck());
+                digester.setStringOutputType(CommonUtils.STRING_OUTPUT_TYPE_HEXADECIMAL);
+                digest = digester.digest(value);
+            }
+            case BCRYPT -> digest = BCrypt.hashpw(value, BCrypt.gensalt());
+            default -> {
+                // Case AES
+                SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), CipherAlgorithm.AES.getAlgorithm());
+                Cipher cipher = Cipher.getInstance(CipherAlgorithm.AES.getAlgorithm());
+                cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+                digest = Base64.getEncoder().encodeToString(cipher.doFinal(value.getBytes(StandardCharsets.UTF_8)));
+            }
+        }
+        return digest;
+    }
+
 }

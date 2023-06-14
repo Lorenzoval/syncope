@@ -191,4 +191,81 @@ public class EncryptorTests {
         }
 
     }
+
+    @RunWith(Parameterized.class)
+    public static class EncryptorVerifyTest extends EncryptorTest {
+        private final boolean expected;
+        private final String value;
+
+        private final CipherAlgorithm cipherAlgorithm;
+        private final String encodedValue;
+        private Encryptor sut;
+
+
+        public EncryptorVerifyTest(boolean expected, String value, CipherAlgorithm cipherAlgorithm,
+                                   String encodedValue) {
+            this.expected = expected;
+            this.value = value;
+            this.cipherAlgorithm = cipherAlgorithm;
+            this.encodedValue = encodedValue;
+        }
+
+        @Parameterized.Parameters
+        public static Collection<Object[]> getParameters() throws NoSuchPaddingException, IllegalBlockSizeException,
+                NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+            return Arrays.asList(new Object[][]{
+                    {false, null, CipherAlgorithm.SSHA1, PASSWORD},
+                    {true, PASSWORD, null, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.AES, KEY)},
+                    {true, "", CipherAlgorithm.SHA1, EncryptorOracle.encode("", CipherAlgorithm.SHA1, KEY)},
+                    {false, "", CipherAlgorithm.SHA1, PASSWORD},
+                    {true, "", CipherAlgorithm.SHA256, EncryptorOracle.encode("", CipherAlgorithm.SHA256, KEY)},
+                    {false, "", CipherAlgorithm.SHA256, PASSWORD},
+                    {true, "", CipherAlgorithm.SHA512, EncryptorOracle.encode("", CipherAlgorithm.SHA512, KEY)},
+                    {false, "", CipherAlgorithm.SHA512, PASSWORD},
+                    {true, "", CipherAlgorithm.AES, EncryptorOracle.encode("", CipherAlgorithm.AES, KEY)},
+                    {false, "", CipherAlgorithm.AES, PASSWORD},
+                    {true, "", CipherAlgorithm.SMD5, EncryptorOracle.encode("", CipherAlgorithm.SMD5, KEY)},
+                    {false, "", CipherAlgorithm.SMD5, PASSWORD},
+                    {true, "", CipherAlgorithm.SSHA1, EncryptorOracle.encode("", CipherAlgorithm.SSHA1, KEY)},
+                    {false, "", CipherAlgorithm.SSHA1, PASSWORD},
+                    {true, "", CipherAlgorithm.SSHA256, EncryptorOracle.encode("", CipherAlgorithm.SSHA256, KEY)},
+                    {false, "", CipherAlgorithm.SSHA256, PASSWORD},
+                    {true, "", CipherAlgorithm.SSHA512, EncryptorOracle.encode("", CipherAlgorithm.SSHA512, KEY)},
+                    {false, "", CipherAlgorithm.SSHA512, PASSWORD},
+                    {true, "", CipherAlgorithm.BCRYPT, EncryptorOracle.encode("", CipherAlgorithm.BCRYPT, KEY)},
+                    {false, "", CipherAlgorithm.BCRYPT, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SHA1, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SHA1, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SHA1, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SHA256, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SHA256, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SHA256, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SHA512, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SHA512, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SHA512, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.AES, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.AES, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.AES, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SMD5, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SMD5, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SMD5, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SSHA1, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SSHA1, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SSHA1, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SSHA256, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SSHA256, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SSHA256, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.SSHA512, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.SSHA512, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.SSHA512, PASSWORD},
+                    {true, PASSWORD, CipherAlgorithm.BCRYPT, EncryptorOracle.encode(PASSWORD, CipherAlgorithm.BCRYPT, KEY)},
+                    {false, PASSWORD, CipherAlgorithm.BCRYPT, PASSWORD},
+            });
+        }
+
+        @Before
+        public void init() throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+                IllegalAccessException {
+            this.sut = newEncryptor(KEY);
+        }
+
+        @Test
+        public void testVerify() {
+            boolean result = this.sut.verify(this.value, this.cipherAlgorithm, this.encodedValue);
+            Assert.assertEquals(result, this.expected);
+        }
+
+    }
 }
