@@ -288,7 +288,7 @@ public class EncryptorTests {
                     {null, "", false},
                     {BadPaddingException.class, "", true},
                     {null, KEY, false},
-                    {null, KEY, true},
+                    {null, KEY, true}
             });
         }
 
@@ -312,4 +312,54 @@ public class EncryptorTests {
         }
 
     }
+
+    @RunWith(Parameterized.class)
+    public static class EncryptorSaltTest extends EncryptorTest {
+        private final CipherAlgorithm cipherAlgorithm;
+        private Encryptor sut;
+
+
+        public EncryptorSaltTest(CipherAlgorithm cipherAlgorithm) {
+            this.cipherAlgorithm = cipherAlgorithm;
+        }
+
+        @Parameterized.Parameters
+        public static Collection<Object[]> getParameters() {
+            return Arrays.asList(new Object[][]{
+                    {CipherAlgorithm.SMD5},
+                    {CipherAlgorithm.SSHA1},
+                    {CipherAlgorithm.SSHA256},
+                    {CipherAlgorithm.SSHA512},
+                    {CipherAlgorithm.BCRYPT}
+            });
+        }
+
+        @Before
+        public void init() throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+                IllegalAccessException {
+            this.sut = newEncryptor(KEY);
+        }
+
+        @Test
+        public void testEncodeDecode() throws UnsupportedEncodingException, NoSuchPaddingException,
+                IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+            String encoded = this.sut.encode(PASSWORD, cipherAlgorithm);
+            Assert.assertNotEquals(encoded, this.sut.encode(PASSWORD, cipherAlgorithm));
+        }
+
+    }
+
+    public static class EncryptorSingletonTest {
+
+        @Test
+        public void testSingleton() {
+            Encryptor encryptor = Encryptor.getInstance();
+            Encryptor sameEncryptor = Encryptor.getInstance();
+            Assert.assertSame(encryptor, sameEncryptor);
+            Encryptor differentEncryptor = Encryptor.getInstance(KEY);
+            Assert.assertNotSame(encryptor, differentEncryptor);
+        }
+
+    }
+
 }
