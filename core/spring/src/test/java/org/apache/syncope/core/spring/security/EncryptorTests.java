@@ -60,10 +60,10 @@ public class EncryptorTests {
 
     @RunWith(Parameterized.class)
     public static class EncryptorEncodeTest extends EncryptorTest {
-        Encryptor sut;
-        String value;
-        CipherAlgorithm cipherAlgorithm;
-        String secretKey;
+        private final String value;
+        private final CipherAlgorithm cipherAlgorithm;
+        private final String secretKey;
+        private Encryptor sut;
 
         public EncryptorEncodeTest(String value, CipherAlgorithm cipherAlgorithm, String secretKey) {
             this.value = value;
@@ -116,9 +116,79 @@ public class EncryptorTests {
             String hash = sut.encode(this.value, this.cipherAlgorithm);
             CipherAlgorithm cipherAlgorithm = Objects.requireNonNullElse(this.cipherAlgorithm, CipherAlgorithm.AES);
             if (this.value != null)
-                Assert.assertTrue(EncryptorOracle.encode(sut, this.value, hash, cipherAlgorithm));
+                Assert.assertTrue(EncryptorOracle.verify(sut, this.value, hash, cipherAlgorithm));
             else
                 Assert.assertNull(hash);
         }
+    }
+
+    @RunWith(Parameterized.class)
+    public static class EncryptorDecodeTest extends EncryptorTest {
+        private static final String AES_KEY_PASSWORD = "cGBbJaKU33UhK4d6b72Y8w==";
+        private static final String WRONG_KEY = "aesEncryptionKey";
+        private static final String AES_WRONG_KEY_PASSWORD = "xPsi459SpINZAnqIlnbsMw==";
+        private static final String ORACLE = "oracle";
+        private final String value;
+        private final Class<Throwable> exceptionClass;
+        private final String encodedValue;
+        private final CipherAlgorithm cipherAlgorithm;
+        private final String secretKey;
+        private Encryptor sut;
+
+
+        public EncryptorDecodeTest(String value, Class<Throwable> exceptionClass, String encodedValue,
+                                   CipherAlgorithm cipherAlgorithm, String secretKey) {
+            this.value = value;
+            this.exceptionClass = exceptionClass;
+            this.encodedValue = encodedValue;
+            this.cipherAlgorithm = cipherAlgorithm;
+            this.secretKey = secretKey;
+        }
+
+        @Parameterized.Parameters
+        public static Collection<Object[]> getParameters() {
+            return Arrays.asList(new Object[][]{
+                    {null, null, null, CipherAlgorithm.AES, KEY},
+                    {null, null, AES_KEY_PASSWORD, null, KEY},
+                    {null, null, AES_KEY_PASSWORD, CipherAlgorithm.SHA1, KEY},
+                    {null, BadPaddingException.class, AES_WRONG_KEY_PASSWORD, CipherAlgorithm.AES, KEY},
+                    {"", null, "", CipherAlgorithm.AES, KEY},
+                    {null, IllegalBlockSizeException.class, PASSWORD, CipherAlgorithm.AES, ""},
+                    {"password", null, ORACLE, CipherAlgorithm.AES, ""},
+                    {null, BadPaddingException.class, AES_WRONG_KEY_PASSWORD, CipherAlgorithm.AES, ""},
+                    {null, IllegalBlockSizeException.class, PASSWORD, CipherAlgorithm.AES, SHORT_KEY},
+                    {"password", null, ORACLE, CipherAlgorithm.AES, SHORT_KEY},
+                    {null, BadPaddingException.class, AES_WRONG_KEY_PASSWORD, CipherAlgorithm.AES, SHORT_KEY},
+                    {null, IllegalBlockSizeException.class, PASSWORD, CipherAlgorithm.AES, KEY},
+                    {"password", null, AES_KEY_PASSWORD, CipherAlgorithm.AES, KEY},
+                    {null, BadPaddingException.class, AES_WRONG_KEY_PASSWORD, CipherAlgorithm.AES, KEY},
+                    {null, IllegalBlockSizeException.class, PASSWORD, CipherAlgorithm.AES, LONG_KEY},
+                    {"password", null, AES_KEY_PASSWORD, CipherAlgorithm.AES, LONG_KEY},
+                    {null, BadPaddingException.class, AES_WRONG_KEY_PASSWORD, CipherAlgorithm.AES, LONG_KEY}
+            });
+        }
+
+        @Before
+        public void init() throws InvocationTargetException, NoSuchMethodException, InstantiationException,
+                IllegalAccessException {
+            this.sut = newEncryptor(this.secretKey);
+        }
+
+        @Test
+        public void testDecode() throws UnsupportedEncodingException, NoSuchPaddingException,
+                IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException,
+                NoSuchFieldException, IllegalAccessException {
+            if (this.exceptionClass != null) {
+                Assert.assertThrows(this.exceptionClass, () -> sut.decode(this.encodedValue, this.cipherAlgorithm));
+            } else {
+                String value;
+                if (ORACLE.equals(this.encodedValue))
+                    value = sut.decode(EncryptorOracle.aesOracle(sut, this.value), this.cipherAlgorithm);
+                else
+                    value = sut.decode(this.encodedValue, this.cipherAlgorithm);
+                Assert.assertEquals(value, this.value);
+            }
+        }
+
     }
 }

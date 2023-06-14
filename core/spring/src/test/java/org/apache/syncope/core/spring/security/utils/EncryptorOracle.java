@@ -24,7 +24,7 @@ public class EncryptorOracle {
     private EncryptorOracle() {
     }
 
-    public static boolean encode(Encryptor sut, String value, String generated, CipherAlgorithm cipherAlgorithm)
+    public static boolean verify(Encryptor sut, String value, String generated, CipherAlgorithm cipherAlgorithm)
             throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException,
             NoSuchFieldException, IllegalAccessException, InvalidKeyException {
         boolean check;
@@ -68,4 +68,16 @@ public class EncryptorOracle {
         }
         return check;
     }
+
+    public static String aesOracle(Encryptor sut, String value) throws NoSuchFieldException, NoSuchPaddingException,
+            NoSuchAlgorithmException, IllegalAccessException, InvalidKeyException, IllegalBlockSizeException,
+            BadPaddingException {
+        Field keySpecField = Encryptor.class.getDeclaredField("keySpec");
+        keySpecField.setAccessible(true);
+        SecretKeySpec keySpec = (SecretKeySpec) keySpecField.get(sut);
+        Cipher cipher = Cipher.getInstance(CipherAlgorithm.AES.getAlgorithm());
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+        return Base64.getEncoder().encodeToString(cipher.doFinal(value.getBytes(StandardCharsets.UTF_8)));
+    }
+
 }
