@@ -354,6 +354,7 @@ public class EncryptorTests {
         @Test
         public void testSingleton() {
             Encryptor encryptor = Encryptor.getInstance();
+            Assert.assertNotNull(encryptor);
             Encryptor sameEncryptor = Encryptor.getInstance();
             Assert.assertSame(encryptor, sameEncryptor);
             Encryptor differentEncryptor = Encryptor.getInstance(KEY);
