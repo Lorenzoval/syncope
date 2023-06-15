@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
-import static org.mockito.Mockito.*;
-
 @RunWith(Enclosed.class)
 public class EncryptorTests {
     private static final String PASSWORD = "password";
@@ -47,7 +45,7 @@ public class EncryptorTests {
         public static void setUp() {
             SecurityProperties securityProperties = new SecurityProperties();
             ConfigurableApplicationContext context = Mockito.mock(ConfigurableApplicationContext.class);
-            when(context.getBean(SecurityProperties.class)).thenReturn(securityProperties);
+            Mockito.when(context.getBean(SecurityProperties.class)).thenReturn(securityProperties);
             applicationContextProvider = Mockito.mockStatic(ApplicationContextProvider.class);
             applicationContextProvider.when(ApplicationContextProvider::getApplicationContext).thenReturn(context);
         }
