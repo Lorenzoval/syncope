@@ -10,6 +10,7 @@ import org.apache.syncope.core.persistence.api.entity.user.User;
 import org.apache.syncope.core.spring.security.utils.EncryptorOracle;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
@@ -104,6 +105,7 @@ public class AuthDataAccessorAuthenticateTests {
         return authentication;
     }
 
+    @Ignore
     public enum AuthenticationType {
         NULL,
         VALID,
