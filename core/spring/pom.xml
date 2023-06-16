@@ -228,9 +228,11 @@ under the License.
             <configuration>
               <targetClasses>
                 <param>org.apache.syncope.core.spring.security.Encryptor</param>
+                <param>org.apache.syncope.core.spring.security.AuthDataAccessor</param>
               </targetClasses>
               <targetTests>
                 <param>org.apache.syncope.core.spring.security.EncryptorTests</param>
+                <param>org.apache.syncope.core.spring.security.AuthDataAccessorAuthenticateTests</param>
               </targetTests>
             </configuration>
             <executions>
