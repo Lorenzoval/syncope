@@ -127,8 +127,7 @@ public class AuthDataAccessorAuthenticateTests {
         return triple;
     }
 
-    @Ignore
-    public enum AuthenticationType {
+    private enum AuthenticationType {
         NULL,
         VALID,
         INVALID_USERNAME,
@@ -137,8 +136,7 @@ public class AuthDataAccessorAuthenticateTests {
         NULL_PASSWORD
     }
 
-    @Ignore
-    public enum ExpectedResult {
+    private enum ExpectedResult {
         // To be expanded as needed
         NULL,
         NULL_NULL_NULL,
@@ -278,6 +276,7 @@ public class AuthDataAccessorAuthenticateTests {
             sut.authenticate(DOMAIN, authentication);
             Mockito.verify(user, Mockito.times(1))
                     .setLastLoginDate(Mockito.any(OffsetDateTime.class));
+            Mockito.verify(userDAO, Mockito.times(1)).save(user);
         }
 
         @Test
@@ -293,6 +292,23 @@ public class AuthDataAccessorAuthenticateTests {
                     null, null, null, null);
             sut.authenticate(DOMAIN, authentication);
             Mockito.verify(user, Mockito.times(1)).setFailedLogins(0);
+            Mockito.verify(userDAO, Mockito.times(1)).save(user);
+        }
+
+        @Test
+        public void testIncreaseFailedLogins() throws NoSuchPaddingException, IllegalBlockSizeException,
+                NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+            User user = createUser(USERNAME, PASSWORD, CipherAlgorithm.BCRYPT, PASSWORD, false, ACTIVE, 0);
+            UserDAO userDAO = createUserDAO(List.of(user));
+            RealmDAO realmDAO = createRealmDAO();
+            ConfParamOps confParamOps = createConfParamOps(DOMAIN, USERNAME, false);
+            Authentication authentication = createAuthentication(AuthenticationType.INVALID_PASSWORD);
+            AuthDataAccessor sut = new AuthDataAccessor(new SecurityProperties(), realmDAO, userDAO, null,
+                    null, null, confParamOps, null, null,
+                    null, null, null, null);
+            sut.authenticate(DOMAIN, authentication);
+            Mockito.verify(user, Mockito.times(1)).setFailedLogins(1);
+            Mockito.verify(userDAO, Mockito.times(1)).save(user);
         }
 
     }
