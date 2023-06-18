@@ -22,7 +22,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify -Drat.skip -Dcheckstyle.skip -P df-coverage
+        run: mvn -B verify -P df-coverage
 
       - name: Upload report
         uses: actions/upload-artifact@v3
